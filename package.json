@@ -1,0 +1,32 @@
+{
+  "name": "rss-feed-generator",
+  "version": "1.0.0",
+  "description": "A simple RSS feed generator for Cloudflare Workers with HTML embedding support",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc",
+    "format": "prettier --write '**/*.{ts,js,json,md}'",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": [
+    "rss",
+    "feed",
+    "cloudflare",
+    "workers",
+    "html",
+    "xml"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250110.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.87.0"
+  }
+}
