@@ -1,0 +1,16 @@
+name = "rss-feed-generator"
+main = "src/index.ts"
+compatibility_date = "2025-01-27"
+
+# Uncomment to deploy
+# account_id = "your-account-id"
+# workers_dev = true
+
+[build]
+command = "npm run build"
+
+[env.production]
+name = "rss-feed-generator-production"
+
+[env.staging]
+name = "rss-feed-generator-staging"
