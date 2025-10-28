@@ -3,8 +3,8 @@ main = "src/index.ts"
 compatibility_date = "2025-01-27"
 
 # Uncomment to deploy
-# account_id = "your-account-id"
-# workers_dev = true
+account_id = "dea48c1345f4585c5281826cd50ee777"
+workers_dev = true
 
 [build]
 command = "npm run build"

@@ -1,15 +1,17 @@
-# RSS Feed Generator for Cloudflare Workers
+# RSS Feed Aggregator for Cloudflare Workers
 
-A simple, fast, and flexible RSS feed generator built for Cloudflare Workers with full HTML embedding support.
+A powerful RSS feed aggregator that fetches multiple RSS/Atom feeds and combines them into a single, unified feed. Built for Cloudflare Workers with support for both RSS 2.0 and Atom formats.
 
 ## Features
 
-- **Full HTML Support** - Embed rich HTML content in your feed items using CDATA sections
-- **RSS 2.0 Compliant** - Standards-compliant RSS feeds that work with all RSS readers
-- **TypeScript** - Fully typed for better developer experience
-- **Easy to Use** - Simple API for creating custom feeds
+- **Multi-Source Aggregation** - Combine multiple RSS and Atom feeds into one
+- **Automatic Parsing** - Supports both RSS 2.0 and Atom feed formats
+- **Smart Sorting** - Items automatically sorted by publication date (newest first)
+- **Source Attribution** - Each item includes its original source information
+- **Configurable Limits** - Control the maximum number of items in the combined feed
+- **Full HTML Support** - Preserves rich HTML content from source feeds
 - **Fast & Scalable** - Powered by Cloudflare Workers edge network
-- **Customizable** - Flexible configuration for all RSS 2.0 fields
+- **TypeScript** - Fully typed for better developer experience
 
 ## Quick Start
 
@@ -29,204 +31,147 @@ npm run dev
 
 Visit `http://localhost:8787` to see the landing page, and `http://localhost:8787/rss` for the RSS feed.
 
+### Configuration
+
+Edit `src/config.ts` to configure your RSS feed sources:
+
+```typescript
+export const aggregatorConfig: AggregatorConfig = {
+  title: 'My Aggregated RSS Feed',
+  description: 'A combined feed from multiple sources',
+  link: 'https://your-worker.workers.dev',
+  maxItems: 50, // Limit to 50 most recent items
+
+  sources: [
+    {
+      url: 'https://hnrss.org/frontpage',
+      title: 'Hacker News',
+    },
+    {
+      url: 'https://blog.cloudflare.com/rss/',
+      title: 'Cloudflare Blog',
+    },
+    // Add more feeds here
+  ],
+};
+```
+
 ### Deployment
 
-1. Update `wrangler.toml` with your Cloudflare account ID
+1. Authenticate with Cloudflare:
+
+```bash
+npx wrangler login
+```
+
 2. Deploy to Cloudflare Workers:
 
 ```bash
 npm run deploy
 ```
 
+Your aggregated feed will be available at `https://your-worker.workers.dev/rss`
+
 ## Usage
 
-### Basic Example
+### Adding Feed Sources
+
+Add RSS or Atom feeds to the `sources` array in `src/config.ts`:
 
 ```typescript
-import { RSSFeedBuilder } from './rss-builder';
-import { FeedConfig, FeedItem } from './types';
-
-// Configure your feed
-const feedConfig: FeedConfig = {
-  title: 'My Blog',
-  description: 'Latest posts from my blog',
-  link: 'https://myblog.com',
-  language: 'en-us',
-  lastBuildDate: new Date(),
-};
-
-// Create feed items with HTML content
-const items: FeedItem[] = [
+sources: [
   {
-    title: 'My First Post',
-    link: 'https://myblog.com/posts/first',
-    description: `
-      <h2>Welcome!</h2>
-      <p>This is my first post with <strong>HTML content</strong>.</p>
-      <img src="https://example.com/image.jpg" alt="Post image" />
-    `,
-    pubDate: new Date(),
-    author: 'author@example.com (Author Name)',
+    url: 'https://example.com/feed.xml',  // RSS or Atom feed URL
+    title: 'Example Feed',                 // Display name for this source
   },
-];
-
-// Build the RSS feed
-const rss = new RSSFeedBuilder(feedConfig);
-const xml = rss.addItems(items).build();
-
-// Return as response
-return new Response(xml, {
-  headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
-});
+  // Add more sources...
+]
 ```
 
-### HTML Content in Feeds
-
-The RSS builder properly handles HTML content using CDATA sections:
+### Configuration Options
 
 ```typescript
-const item: FeedItem = {
-  title: 'Rich Content Post',
-  link: 'https://example.com/post',
-  description: `
-    <article>
-      <h2>Article Title</h2>
-      <p>This supports <em>all HTML tags</em>:</p>
-      <ul>
-        <li>Lists</li>
-        <li>Links: <a href="https://example.com">Click here</a></li>
-        <li>Images: <img src="image.jpg" alt="Description" /></li>
-        <li>Code: <code>const x = 1;</code></li>
-      </ul>
-      <blockquote>Quotes work too!</blockquote>
-    </article>
-  `,
-  pubDate: new Date(),
-};
-```
-
-### Feed Configuration Options
-
-```typescript
-interface FeedConfig {
-  // Required
-  title: string;
-  description: string;
-  link: string;
-
-  // Optional
-  language?: string; // e.g., 'en-us'
-  copyright?: string;
-  managingEditor?: string; // email (name)
-  webMaster?: string; // email (name)
-  pubDate?: Date;
-  lastBuildDate?: Date;
-  category?: string;
-  generator?: string;
-  docs?: string;
-  ttl?: number; // Time to live in minutes
-  image?: FeedImage; // Feed logo/image
+interface AggregatorConfig {
+  title: string;           // Title of your aggregated feed
+  description: string;     // Description of your aggregated feed
+  link: string;           // URL where your feed is hosted
+  sources: SourceFeed[];  // Array of feed sources
+  maxItems?: number;      // Maximum items in combined feed (optional)
+  language?: string;      // Feed language, e.g., 'en-us' (optional)
+  copyright?: string;     // Copyright notice (optional)
 }
 ```
 
-### Feed Item Options
+### How It Works
 
-```typescript
-interface FeedItem {
-  // Required
-  title: string;
-  link: string;
-  description: string; // Can contain HTML
+1. The aggregator fetches all configured RSS/Atom feeds in parallel
+2. Parses each feed (supports both RSS 2.0 and Atom formats)
+3. Extracts items from each feed with source attribution
+4. Combines all items and sorts by publication date (newest first)
+5. Limits the result to `maxItems` if configured
+6. Generates a unified RSS 2.0 feed
 
-  // Optional
-  author?: string; // email (name)
-  category?: string;
-  comments?: string; // URL to comments
-  enclosure?: FeedEnclosure; // Media file
-  guid?: string; // Unique identifier
-  pubDate?: Date;
-  source?: FeedSource;
-}
-```
+### Supported Feed Formats
+
+The aggregator automatically detects and parses:
+- **RSS 2.0** - Standard RSS format
+- **Atom** - Modern Atom syndication format
+
+Both formats are converted to a unified RSS 2.0 output feed.
 
 ## Project Structure
 
 ```
 rss-feeds/
 ├── src/
-│   ├── index.ts          # Main Cloudflare Worker entry point
-│   ├── rss-builder.ts    # RSS feed builder class
-│   └── types.ts          # TypeScript type definitions
-├── wrangler.toml         # Cloudflare Workers configuration
-├── tsconfig.json         # TypeScript configuration
-├── package.json          # Dependencies and scripts
-└── README.md            # This file
+│   ├── index.ts             # Main Cloudflare Worker entry point
+│   ├── config.ts            # Feed sources configuration
+│   ├── feed-aggregator.ts   # Feed fetching and aggregation logic
+│   ├── rss-parser.ts        # RSS/Atom feed parser
+│   ├── rss-builder.ts       # RSS 2.0 feed builder
+│   ├── types.ts             # TypeScript type definitions
+│   └── example-config.ts    # Example configuration (unused)
+├── wrangler.toml            # Cloudflare Workers configuration
+├── tsconfig.json            # TypeScript configuration
+├── package.json             # Dependencies and scripts
+└── README.md                # This file
 ```
 
 ## API Endpoints
 
-- `/` - Landing page with feed information
-- `/rss` or `/feed` - RSS feed XML
+- `/` - Landing page showing configured sources and feed information
+- `/rss` or `/feed` - Aggregated RSS feed XML
 
-## Customization
+## Use Cases
 
-### Modify Feed Content
-
-Edit `src/index.ts` and update the `generateRSSFeed()` function with your custom feed configuration and items.
-
-### Add Dynamic Content
-
-Fetch content from external APIs, databases (Cloudflare D1, KV), or other sources:
-
+### Personal News Aggregator
+Combine your favorite blogs and news sites into one feed:
 ```typescript
-async function generateRSSFeed(): Promise<Response> {
-  // Fetch from KV, D1, or external API
-  const posts = await fetchPostsFromDatabase();
-
-  const items: FeedItem[] = posts.map(post => ({
-    title: post.title,
-    link: post.url,
-    description: post.content, // HTML content
-    pubDate: new Date(post.publishedAt),
-  }));
-
-  const rss = new RSSFeedBuilder(feedConfig);
-  return new Response(rss.addItems(items).build(), {
-    headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
-  });
-}
+sources: [
+  { url: 'https://hnrss.org/frontpage', title: 'Hacker News' },
+  { url: 'https://blog.cloudflare.com/rss/', title: 'Cloudflare' },
+  { url: 'https://github.blog/feed/', title: 'GitHub Blog' },
+]
 ```
 
-### Add Images to Feed
-
+### Team Updates Dashboard
+Aggregate multiple team blogs or project feeds:
 ```typescript
-const feedConfig: FeedConfig = {
-  title: 'My Feed',
-  description: 'Feed description',
-  link: 'https://example.com',
-  image: {
-    url: 'https://example.com/logo.png',
-    title: 'My Feed Logo',
-    link: 'https://example.com',
-    width: 144,
-    height: 144,
-  },
-};
+sources: [
+  { url: 'https://engineering-blog.example.com/feed', title: 'Engineering' },
+  { url: 'https://product-blog.example.com/feed', title: 'Product' },
+  { url: 'https://design-blog.example.com/feed', title: 'Design' },
+]
 ```
 
-### Add Media Enclosures
-
+### Content Curation
+Combine feeds from specific topics or niches:
 ```typescript
-const item: FeedItem = {
-  title: 'Podcast Episode 1',
-  link: 'https://example.com/episode-1',
-  description: 'First episode of our podcast',
-  enclosure: {
-    url: 'https://example.com/episode-1.mp3',
-    length: 12345678, // File size in bytes
-    type: 'audio/mpeg',
-  },
-};
+sources: [
+  { url: 'https://source1.com/rss', title: 'Source 1' },
+  { url: 'https://source2.com/atom', title: 'Source 2' },
+  { url: 'https://source3.com/feed.xml', title: 'Source 3' },
+]
 ```
 
 ## RSS 2.0 Specification

@@ -51,3 +51,18 @@ export interface FeedSource {
   url: string;
   title: string;
 }
+
+export interface AggregatorConfig {
+  title: string;
+  description: string;
+  link: string;
+  sources: SourceFeed[];
+  maxItems?: number; // Maximum number of items in the combined feed
+  language?: string;
+  copyright?: string;
+}
+
+export interface SourceFeed {
+  url: string;
+  title: string;
+}
